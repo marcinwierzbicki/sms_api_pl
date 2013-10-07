@@ -5,14 +5,13 @@ module SmsApi
   class Connection
     # Available options to pass in constructor
     # This options you can use to send in params
-    AVAILABLE_OPTIONS = [:password, :username, :from, :to, :group, :message, :from, :encoding, :flash, :test,
+    AVAILABLE_OPTIONS = [:password, :username, :from, :to, :group, :message, :from, :encoding, :flash, :test, 
                          :details, :date, :datacodin, :idx, :check_idx, :single, :eco, :nounicode, :fast]
-
+ 
     # Required field for sending sms
-    REQUIRED_FIELDS = [:from, :password, :username, :to, :message]
+    REQUIRED_FIELDS = [:from, :password, :username, :to, :message] 
 
-    attr_accessor  :password, :username, :from, :to, :group, :message, :from, :encoding, :flash, :test,
-                   :details, :date, :datacodin, :idx, :check_idx, :single, :eco, :nounicode, :fast, :passed_options
+    attr_accessor *AVAILABLE_OPTIONS, :passed_options
 
     #=================================================================================================
     # Parametr      | Opis
@@ -91,9 +90,9 @@ module SmsApi
     # Default constructor. Received arguments should be as a hash.
     def initialize(*args)
       options = args.extract_options!.symbolize_keys!
-      options.merge!(:username => (options[:username] || SmsApi.username),
-                     :password => (options[:password] || SmsApi.password),
-                     :test => SmsApi.test_mode)
+      options.merge!(username: (options[:username] || SmsApi.username), 
+                     password: (options[:password] || SmsApi.password),
+                     test: SmsApi.test_mode)
 
       options.each_pair do |opt_key, opt_val|
         if AVAILABLE_OPTIONS.include?(opt_key)
@@ -144,8 +143,8 @@ module SmsApi
       begin
         deliver!
         true
-      rescue DeliverError, InvalidPhoneNumberNumeraticly, InvalidPhoneNumberLength,
-        InvalidPhoneNumber, InvalidSmsPropertis => e
+      rescue DeliverError, InvalidPhoneNumberNumeraticly, InvalidPhoneNumberLength, 
+             InvalidPhoneNumber, InvalidSmsPropertis => e
         false
       end
     end
@@ -179,13 +178,13 @@ module SmsApi
       phone_number      = self.to.gsub(/\s|\-|\+|\.|\(|\)/, '')
 
       if not avaliable_length.include?(phone_number.size)
-        raise InvalidPhoneNumberLength, "Please check phone number: #{@to}."
+        raise InvalidPhoneNumberLength, "Please check phone number: #{@to}." 
       elsif phone_number.length == 11 && !phone_number.match(/^48/)
         raise InvalidPhoneNumber, "Wrong phone format: #{@to}."
       elsif phone_number.match(/[A-Za-z]/)
-        raise InvalidPhoneNumberNumeraticly, "Phone number contains letters: #{@to}."
+        raise InvalidPhoneNumberNumeraticly, "Phone number contains letters: #{@to}." 
       end
-
+      
       true
     end
 
