@@ -11,7 +11,8 @@ module SmsApi
     # Required field for sending sms
     REQUIRED_FIELDS = [:from, :password, :username, :to, :message] 
 
-    attr_accessor *AVAILABLE_OPTIONS, :passed_options
+    attr_accessor :password, :username, :from, :to, :group, :message, :from, :encoding, :flash, :test,
+                  :details, :date, :datacodin, :idx, :check_idx, :single, :eco, :nounicode, :fast, :passed_options
 
     #=================================================================================================
     # Parametr      | Opis
@@ -90,9 +91,9 @@ module SmsApi
     # Default constructor. Received arguments should be as a hash.
     def initialize(*args)
       options = args.extract_options!.symbolize_keys!
-      options.merge!(username: (options[:username] || SmsApi.username), 
-                     password: (options[:password] || SmsApi.password),
-                     test: SmsApi.test_mode)
+      options.merge!(:username => (options[:username] || SmsApi.username),
+                     :password => (options[:password] || SmsApi.password),
+                     :test => SmsApi.test_mode)
 
       options.each_pair do |opt_key, opt_val|
         if AVAILABLE_OPTIONS.include?(opt_key)
