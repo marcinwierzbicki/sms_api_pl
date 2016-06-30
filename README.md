@@ -8,16 +8,13 @@ Version 0.1 supports only sending sms.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'sms_api', :git => 'git://github.com/petergebala/sms_api.git'
+gem 'sms_api', :git => 'git://github.com/marcinwierzbicki/sms_api_pl.git'
 ```
 
 And then execute:
 
     $ bundle
 
-Or install it yourself as:
-
-    $ gem install sms_api
 
 Add configuration file to initializers:
 
