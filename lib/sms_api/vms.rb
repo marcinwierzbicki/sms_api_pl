@@ -1,0 +1,105 @@
+require 'net/http'
+require 'uri'
+
+module SmsApi
+  class VMS 
+    # Available options to pass in constructor
+    # This options you can use to send in params
+    AVAILABLE_OPTIONS = [:password, :username, :from, :to, :group, :tts, :file, :date, :date_validate, :try, :interval, :skip_gsm, :check_idx, :notify_url, :test]
+ 
+    # Required field for sending vms
+    REQUIRED_FIELDS = [:from, :password, :username, :to, :tts] 
+
+    attr_accessor *AVAILABLE_OPTIONS, :passed_options
+
+    # Default constructor. Received arguments should be as a hash.
+    def initialize(*args)
+      options = args.extract_options!.symbolize_keys!
+      options.merge!(username: (options[:username] || SmsApi.username), 
+                     password: (options[:password] || SmsApi.password),
+                     test: SmsApi.test_mode)
+
+      options.each_pair do |opt_key, opt_val|
+        if AVAILABLE_OPTIONS.include?(opt_key)
+          self.send("#{opt_key}=", opt_val)
+        else
+          raise ArgumentError, "There is no option: #{opt_key}. Please check documentation."
+        end
+      end
+
+      # Encode password and save in instance variable
+      self.password = Digest::MD5.hexdigest(options[:password])
+
+      # We are saving information about which options were passed
+      self.passed_options = options.keys
+
+      self
+    end
+
+    # Sends a vms and raise an error if something goes wrong
+    def deliver!
+      # Check if vms have all require fields
+      validate_vms
+
+      # Check if phone number is correct
+      SmsApi::Phone.validate_phone_number(@to)
+
+      # Sending vms to vmsapi.pl
+      response = Net::HTTP.post_form(URI.parse(SmsApi.vms_api_url), generate_params).body
+
+      # Checking response. If is an error then we are raising exception
+      # other wise we return array [:ID, :POINTS]
+      # where ID is an vms ID and POINTS is cost of an vms
+      if response.match(/^ERROR:(\d+)$/)
+        raise DeliverError, $1
+      elsif response.match(/^OK:(.+):(.+)$/)
+        [$1, $2]
+      else
+        raise DeliverError, "Unknow response."
+      end
+    end
+
+    # Sends a vms and return false if something goes wrong
+    def deliver
+      begin
+        deliver!
+        true
+      rescue DeliverError, InvalidPhoneNumberNumeraticly, InvalidPhoneNumberLength, 
+             InvalidPhoneNumber, InvalidVmsPropertis => e
+        false
+      end
+    end
+
+    private
+    # Validate presence of required fields
+    def validate_vms
+      REQUIRED_FIELDS.each do |field|
+        if self.send(field) == nil || self.send(field) == ""
+          raise InvalidVmsPropertis, "Option #{field} is unset. This field is required."
+        end
+      end
+      true
+    end
+
+    # Return hash of options which was set.
+    def generate_params
+      result = {}
+
+      passed_options.each do |opt|
+        result[opt] = self.send(opt)
+      end
+
+      # Setting up test option
+      self.test ? result[:test] = 1 : result.delete(:test)
+
+      result
+    end
+  end
+end
+
+class InvalidVmsPropertis < StandardError; end;
+class DeliverError < StandardError
+  def initialize(status)
+    super(SmsApi::Mappings::ERRORS.keys.include?(status.to_i) ? SmsApi::Mappings::ERRORS[status.to_i] : status)
+  end
+end

@@ -1,5 +1,7 @@
 require "sms_api/version"
-require "sms_api/connection"
+require "sms_api/phone"
+require "sms_api/sms"
+require "sms_api/vms"
 require "sms_api/mappings"
 
 module SmsApi
@@ -12,8 +14,10 @@ module SmsApi
   @@test_mode = false
 
   # Address of smsapi.pl
-  mattr_accessor :api_url
-  @@api_url = "http://api.smsapi.pl/sms.do"
+  mattr_accessor :sms_api_url
+  mattr_accessor :vms_api_url
+  @@sms_api_url = "http://api.smsapi.pl/sms.do"
+  @@vms_api_url = "http://api.smsapi.pl/vms.do"
 
 
   # Needed for configuration file
