@@ -40,7 +40,11 @@ module SmsApi
       req = Net::HTTP::Post.new(url)
       req.form_data = params
       req.basic_auth url.user, url.password if url.user
-      Net::HTTP.start(url.hostname, url.port,
+
+      uri = URI.parse(ENV['http_proxy'])
+      proxy = Net::HTTP::Proxy(uri.hostname, uri.port)
+
+      proxy.start(url.hostname, url.port,
             use_ssl: (url.scheme == 'https'), p_addr: :ENV, p_port: :ENV) {|http|
         http.request(req)
       }
