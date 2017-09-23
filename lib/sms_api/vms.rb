@@ -2,20 +2,20 @@ require 'net/http'
 require 'uri'
 
 module SmsApi
-  class VMS 
+  class VMS
     # Available options to pass in constructor
     # This options you can use to send in params
     AVAILABLE_OPTIONS = [:password, :username, :from, :to, :group, :tts, :file, :date, :date_validate, :try, :interval, :skip_gsm, :check_idx, :notify_url, :test]
- 
+
     # Required field for sending vms
-    REQUIRED_FIELDS = [:from, :password, :username, :to, :tts] 
+    REQUIRED_FIELDS = [:from, :password, :username, :to, :tts]
 
     attr_accessor *AVAILABLE_OPTIONS, :passed_options
 
     # Default constructor. Received arguments should be as a hash.
     def initialize(*args)
       options = args.extract_options!.symbolize_keys!
-      options.merge!(username: (options[:username] || SmsApi.username), 
+      options.merge!(username: (options[:username] || SmsApi.username),
                      password: (options[:password] || SmsApi.password),
                      test: SmsApi.test_mode)
 
@@ -36,6 +36,16 @@ module SmsApi
       self
     end
 
+    def post_form(url, params)
+      req = Net::HTTP::Post.new(url)
+      req.form_data = params
+      req.basic_auth url.user, url.password if url.user
+      Net::HTTP.start(url.hostname, url.port,
+            :use_ssl => url.scheme == 'https', :p_addr = :ENV, :p_port => :ENV) {|http|
+        http.request(req)
+      }
+    end
+
     # Sends a vms and raise an error if something goes wrong
     def deliver!
       # Check if vms have all require fields
@@ -45,7 +55,7 @@ module SmsApi
       SmsApi::Phone.validate_phone_number(@to)
 
       # Sending vms to vmsapi.pl
-      response = Net::HTTP.post_form(URI.parse(SmsApi.vms_api_url), generate_params).body
+      response = post_form(URI.parse(SmsApi.vms_api_url), generate_params).body
 
       # Checking response. If is an error then we are raising exception
       # other wise we return array [:ID, :POINTS]
@@ -64,7 +74,7 @@ module SmsApi
       begin
         deliver!
         true
-      rescue DeliverError, InvalidPhoneNumberNumeraticly, InvalidPhoneNumberLength, 
+      rescue DeliverError, InvalidPhoneNumberNumeraticly, InvalidPhoneNumberLength,
              InvalidPhoneNumber, InvalidVmsPropertis => e
         false
       end
