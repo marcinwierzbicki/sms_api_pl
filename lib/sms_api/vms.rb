@@ -41,11 +41,15 @@ module SmsApi
       req.form_data = params
       req.basic_auth url.user, url.password if url.user
 
-      uri = URI.parse(ENV['http_proxy'])
-      proxy = Net::HTTP::Proxy(uri.hostname, uri.port)
+      if ENV['http_proxy'].present?
+        uri = URI.parse(ENV['http_proxy'])
+        client = Net::HTTP::Proxy(uri.hostname, uri.port)
+      else
+        client = Net::HTTP
+      end
 
-      proxy.start(url.hostname, url.port,
-            use_ssl: (url.scheme == 'https'), p_addr: :ENV, p_port: :ENV) {|http|
+      client.start(url.hostname, url.port,
+            use_ssl: (url.scheme == 'https')) {|http|
         http.request(req)
       }
     end
